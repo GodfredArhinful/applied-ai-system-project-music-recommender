@@ -1,42 +1,42 @@
-"""
-Command line runner for the Music Recommender Simulation.
+from src.recommender import load_songs, recommend_songs
 
-This file helps you quickly run and test your recommender.
-
-You will implement the functions in recommender.py:
-- load_songs
-- score_song
-- recommend_songs
-"""
-
-from recommender import load_songs, recommend_songs
-
+def print_ascii_table(recommendations, title):
+    # Challenge 4: Visual Summary Table Output
+    print("\n" + "="*112)
+    print(f" {title.upper()} ")
+    print("="*112)
+    print(f"{'#':<3} | {'Song':<35} | {'Score':<6} | {'Reasons'}")
+    print("-" * 112)
+    for i, rec in enumerate(recommendations, 1):
+        song, score, explanation = rec
+        name_str = f"{song['title']} by {song['artist']}"
+        # Format explicitly for clean table UI
+        print(f"{i:<3} | {name_str[:35]:<35} | {score:<6.2f} | {explanation}")
+    print("-" * 112)
 
 def main() -> None:
     songs = load_songs("data/songs.csv") 
 
-    # Step 1: Stress Test with Diverse Profiles + Edge Case
+    # We will test two modes from Challenge 2 with the advanced properties!
     user_profiles = {
-        "High-Energy Pop (Vibe: Pop, Happy, 0.9)": {"genre": "pop", "mood": "happy", "energy": 0.9},
-        "Chill Lofi (Vibe: Lofi, Chill, 0.3)": {"genre": "lofi", "mood": "chill", "energy": 0.3},
-        "Deep Intense Rock (Vibe: Rock, Intense, 0.85)": {"genre": "rock", "mood": "intense", "energy": 0.85},
-        # Edge case: Conflicting preferences (EDM is typically energetic/happy, user wants sad but high energy)
-        "Edge Case Sad EDM (Vibe: EDM, Sad, 0.95)": {"genre": "edm", "mood": "sad", "energy": 0.95}
+        "Old-School Rocker (Genre-First Mode)": {
+            "mode": "genre_first",
+            "prefs": {"genre": "rock", "mood": "intense", "target_decade": 2000, "target_tag": "aggressive"}
+        },
+        "Trendy Workout (Energy-Focused Mode)": {
+            "mode": "energy_focused",
+            "prefs": {"energy": 0.95, "min_popularity": 80, "target_tag": "euphoric"}
+        }
     }
 
-    for profile_name, user_prefs in user_profiles.items():
-        recommendations = recommend_songs(user_prefs, songs, k=3)
-
-        print("\n" + "="*60)
-        print(f" 🎧 TOP RECOMMENDATIONS FOR: {profile_name} 🎧")
-        print("="*60 + "\n")
-        for i, rec in enumerate(recommendations, 1):
-            song, score, explanation = rec
-            print(f"#{i} | {song['title']} by {song['artist']}")
-            print(f"    🌟 Score: {score:.2f} / 4.00")
-            print(f"    💡 Why?   {explanation}")
-            print("-" * 60)
-
+    for profile_name, config in user_profiles.items():
+        mode = config["mode"]
+        prefs = config["prefs"]
+        
+        # Pull top 4 to hopefully visibly trigger the Diversity Penalty for repeated musicians
+        recommendations = recommend_songs(prefs, songs, k=4, mode=mode)
+        
+        print_ascii_table(recommendations, f"TOP RECS FOR: {profile_name}")
 
 if __name__ == "__main__":
     main()
