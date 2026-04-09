@@ -61,27 +61,17 @@ Prompts:
 
 ## 6. Limitations and Bias 
 
-Where the system struggles or behaves unfairly. 
-
-Prompts:  
-
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
+- This system heavily over-prioritizes the initial categorical matching, meaning completely mismatched vibe songs can sometimes outrank a perfect vibe match simply because they lie within the correct umbrella genre.
+- Our dataset `songs.csv` only has 1 rock song and 1 edm song. When the user requests a Rock or EDM profile, the scarcity of choices forces the system to recommend unrelated pop or lofi songs that happen to share adjacent mood or energy levels. Thus the system struggles to properly represent niche styles.
+- The "Weight Shift Experiment" proved that doubling energy importance caused random high-bpm tracks to dominate over categorical genre fits, showing how sensitive the weights are.  
 
 ---
 
 ## 7. Evaluation  
 
-How you checked whether the recommender behaved as expected. 
-
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
+- I tested the system against four distinct user profiles: "High-Energy Pop", "Chill Lofi", "Deep Intense Rock", and an edge-case adversarial profile "Edge Case Sad EDM".
+- I looked for how well the highest recommended songs aligned with both categorical constraints (genre/mood) and dynamic traits (energy).
+- I was surprised to find that the "Gym Hero" pop song consistently showed up across completely unrelated profiles (like Rock and Sad EDM) simply because its high energy stat mathematically overpowered other available tracks that had low energy, due to the tiny size of our catalog.  
 
 No need for numeric metrics unless you created some.
 

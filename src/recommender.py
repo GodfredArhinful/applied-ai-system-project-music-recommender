@@ -58,10 +58,10 @@ class Recommender:
         """Returns a numeric score representing user preference compatibility."""
         score = 0.0
         if song.genre.lower() == user.favorite_genre.lower():
-            score += 2.0
+            score += 1.0
         if song.mood.lower() == user.favorite_mood.lower():
             score += 1.0
-        score += max(0.0, 1.0 - abs(song.energy - user.target_energy))
+        score += max(0.0, 1.0 - abs(song.energy - user.target_energy)) * 2.0
         return score
 
 def load_songs(csv_path: str) -> List[Dict]:
@@ -96,20 +96,20 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     score = 0.0
     reasons = []
 
-    # 1. Genre Match (+2.0 points)
+    # 1. Genre Match (+1.0 point) [WEIGHT SHIFT EXPERIMENT: Halved from 2.0]
     if song.get("genre", "").lower() == user_prefs.get("genre", "").lower():
-        score += 2.0
-        reasons.append("Genre match (+2.0)")
+        score += 1.0
+        reasons.append("Genre match (+1.0)")
 
     # 2. Mood Match (+1.0 point)
     if song.get("mood", "").lower() == user_prefs.get("mood", "").lower():
         score += 1.0
         reasons.append("Mood match (+1.0)")
 
-    # 3. Energy Similarity (Up to +1.0 point)
+    # 3. Energy Similarity (Up to +2.0 points) [WEIGHT SHIFT EXPERIMENT: Doubled from 1.0]
     if "energy" in user_prefs and "energy" in song:
         energy_diff = abs(song["energy"] - user_prefs["energy"])
-        energy_score = max(0.0, 1.0 - energy_diff)
+        energy_score = max(0.0, 1.0 - energy_diff) * 2.0
         score += energy_score
         reasons.append(f"Energy match (+{energy_score:.2f})")
 
