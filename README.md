@@ -17,27 +17,29 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-This system works like a simple content-based recommender: each song is described by musical features and each user is described by a preferred profile. The recommender compares the user's preferred vibe against each song's attributes, calculates a similarity score, and then ranks the songs so the best matches appear first. The version here prioritizes matching the user's desired energy and emotional tone, while also giving extra weight to genre similarity and mood alignment.
+This system works like a simple content-based recommender: each song is described by musical features and each user is described by a preferred profile. The recommender compares the user's preferred vibe against each song's attributes, calculates a similarity score, and then ranks the songs so the best matches appear first.
 
-Song features:
+### Data Flow
 
-- `genre`
-- `mood`
-- `energy`
-- `valence`
-- `danceability`
-- `acousticness`
-- `tempo_bpm`
+![alt text](image.png)
 
-UserProfile features:
+### Algorithm Recipe
 
-- preferred `genre`
-- preferred `mood`
-- preferred `energy`
-- preferred `valence`
-- preferred `danceability`
-- preferred `acousticness`
-- preferred `tempo_bpm`
+The specific rules used to decide which songs to recommend:
+1. **Genre Match (+2.0 points):** A perfect match on genre gives the highest point bump, as genre is the strongest indicator of a user's taste.
+2. **Mood Match (+1.0 point):** A perfect match on mood provides a secondary score boost.
+3. **Energy Similarity (Up to +1.0 point):** Calculated dynamically using `1.0 - |song.energy - user.target_energy|`. Songs closer to the user's desired energy level get higher fractional points.
+
+### Potential Biases
+*Note: This system might over-prioritize genre, meaning great songs that perfectly match the user's desired mood or energy level might be ignored simply because they fall under a different categorical genre.*
+
+### Features Used
+
+**Song features:**
+- `genre`, `mood`, `energy`, `valence`, `danceability`, `acousticness`, `tempo_bpm`
+
+**UserProfile features:**
+- preferred `genre`, preferred `mood`, preferred `energy`, preferred `valence`, preferred `danceability`, `acousticness`, `tempo_bpm`
 
 ---
 
