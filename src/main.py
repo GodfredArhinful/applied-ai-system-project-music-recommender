@@ -1,4 +1,5 @@
 from src.recommender import load_songs, recommend_songs
+from src.ai_dj import AIDJ
 
 def print_ascii_table(recommendations, title):
     # Challenge 4: Visual Summary Table Output
@@ -37,6 +38,43 @@ def main() -> None:
         recommendations = recommend_songs(prefs, songs, k=4, mode=mode)
         
         print_ascii_table(recommendations, f"TOP RECS FOR: {profile_name}")
+
+    # =======================================================
+    # NEW AI DJ FEATURE (RAG Pipeline)
+    # =======================================================
+    print("\n" + "="*112)
+    print(" 🤖 INITIALIZING AI DJ (RAG PIPELINE) 🤖")
+    print("="*112)
+    
+    try:
+        dj = AIDJ(songs)
+        
+        print("\nLet's test the AI DJ with a natural language prompt!")
+        sample_prompt = "I need a nostalgic, calm song to study to late at night."
+        print(f"\nUser Prompt: \"{sample_prompt}\"\n")
+        
+        # Run the RAG pipeline
+        retrieved_songs, dj_response = dj.process_request(sample_prompt, k=3)
+        
+        print("🎵 AI DJ Response:")
+        print("-" * 80)
+        print(dj_response)
+        print("-" * 80)
+        
+        print("\n(Interactive Mode) - Type 'exit' to quit")
+        while True:
+            try:
+                user_input = input("\nWhat kind of music are you looking for? > ")
+                if user_input.lower() in ['exit', 'quit']:
+                    break
+                if user_input.strip():
+                    _, response = dj.process_request(user_input, k=3)
+                    print(f"\n🤖 DJ: {response}")
+            except (KeyboardInterrupt, EOFError):
+                break
+                
+    except Exception as e:
+        print(f"\n⚠️ AI DJ could not be initialized: {e}")
 
 if __name__ == "__main__":
     main()

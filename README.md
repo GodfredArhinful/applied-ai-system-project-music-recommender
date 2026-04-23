@@ -1,265 +1,106 @@
-# 🎵 Music Recommender Simulation
+# 🎵 AI DJ: RAG-Powered Music Recommender
 
-## Project Summary
+## Project Summary & Origin
+This project originated from the **Music Recommender Simulation** (Modules 1-3), which was a deterministic, rule-based recommendation system. Its original goal was to match user "taste profiles" (genre, mood, energy) to a small catalog of songs using a hand-coded scoring algorithm. It successfully demonstrated basic recommendation logic, feature weighting, and the potential biases of rigid rule-based systems.
 
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+**The Upgrade:** To make the project more advanced, dynamic, and intelligent, I have transformed it into an **"AI DJ"**. This system integrates **Retrieval-Augmented Generation (RAG)**. Instead of choosing from rigid profile categories, users can now type a natural language prompt describing exactly what vibe they want. The AI searches the database for the closest semantic matches and then uses a Large Language Model to present the recommendations in a personalized, conversational way.
 
 ---
 
-## How The System Works
+## Architecture Overview
 
-This system works like a simple content-based recommender: each song is described by musical features and each user is described by a preferred profile. The recommender compares the user's preferred vibe against each song's attributes, calculates a similarity score, and then ranks the songs so the best matches appear first.
+The system uses a two-step Retrieval-Augmented Generation (RAG) pipeline:
 
-### Data Flow
+1. **Retrieval (`sentence-transformers`)**: The user's text prompt is converted into a vector embedding. The system calculates the cosine similarity against the pre-embedded song catalog to retrieve the Top-K matching songs.
+2. **Generation (`Google Gemini API`)**: The user's original prompt and the retrieved song data are sent to an LLM. The LLM acts as an AI DJ, synthesizing the data into a friendly response that explains *why* the retrieved songs fit the user's specific vibe.
 
-flowchart TD
-    A[User Profile\nPrefs: Genre, Mood, Energy] --> B{The Loop:\nScore Each Song in CSV}
-    C[(songs.csv)] --> B
-    B --> D[Sorting Logic:\nSort by Score Descending]
-    D --> E[Output:\nTop K Recommendations]
+![System Architecture](assets/image.png)
 
-
-![alt text](image.png)
-
-### Algorithm Recipe
-
-The specific rules used to decide which songs to recommend:
-1. **Genre Match (+2.0 points):** A perfect match on genre gives the highest point bump, as genre is the strongest indicator of a user's taste.
-2. **Mood Match (+1.0 point):** A perfect match on mood provides a secondary score boost.
-3. **Energy Similarity (Up to +1.0 point):** Calculated dynamically using `1.0 - |song.energy - user.target_energy|`. Songs closer to the user's desired energy level get higher fractional points.
-
-### Potential Biases
-*Note: This system might over-prioritize genre, meaning great songs that perfectly match the user's desired mood or energy level might be ignored simply because they fall under a different categorical genre.*
-
-### Features Used
-
-**Song features:**
-- `genre`, `mood`, `energy`, `valence`, `danceability`, `acousticness`, `tempo_bpm`
-
-**UserProfile features:**
-- preferred `genre`, preferred `mood`, preferred `energy`, preferred `valence`, preferred `danceability`, `acousticness`, `tempo_bpm`
+*(Note: Ensure you generate and place your diagram in `assets/image.png`)*
 
 ---
 
-## Getting Started
+## Setup Instructions
 
-### Setup
+Follow these steps to run the AI DJ locally on your machine.
 
-1. Create a virtual environment (optional but recommended):
-
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
-
-2. Install dependencies
+### 1. Install Dependencies
+Ensure you have Python 3.9+ installed. Create a virtual environment (optional but recommended) and install the required packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Run the app:
+### 2. Configure the API Key
+The RAG pipeline requires a Google Gemini API key for the generation step.
+1. Get a free API key from [Google AI Studio](https://aistudio.google.com/).
+2. Copy the `.env.example` file to a new file named `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+3. Open `.env` and paste your API key inside:
+   `GEMINI_API_KEY="your_api_key_here"`
+
+*(If you don't provide an API key, the system will still function using local retrieval, but the generation step will be gracefully skipped).*
+
+### 3. Run the System
+Start the main application script:
 
 ```bash
 python -m src.main
 ```
 
-### Running Tests
+---
 
-Run the starter tests with:
+## Sample Interactions
 
-```bash
-pytest
-```
+Here are examples demonstrating how the AI DJ responds to diverse natural language inputs.
 
-You can add more tests in `tests/test_recommender.py`.
+**Interaction 1: The Late-Night Coder**
+* **User Input:** *"I need a nostalgic, calm song to study to late at night."*
+* **AI DJ Output:** *"Hey there! For a late-night study session, you definitely need a calm and nostalgic vibe to keep you focused. I highly recommend **Midnight Coding by LoRoom**—it’s a chill lo-fi track with a slow tempo that perfectly matches your mood. If you want something even more ambient, **Spacewalk Thoughts by Orbit Bloom** is incredibly relaxing. Happy studying!"*
+
+**Interaction 2: The Gym Goer**
+* **User Input:** *"Give me something super aggressive and high energy for my heavy lifting workout."*
+* **AI DJ Output:** *"Let's get that heart rate up! If you need aggressive, high-energy tracks for lifting, you have to check out **Thunder Forge by Iron Skies**—it's an intense metal anthem that will push you through those heavy sets. Alternatively, **Storm Runner by Voltline** brings that high-bpm rock intensity you're looking for. Go crush it!"*
 
 ---
 
-## Experiments You Tried
+## Design Decisions
 
-Use this section to document the experiments you ran. For example:
+- **Local Retrieval vs API Embeddings:** I chose to use the local `sentence-transformers` library (`all-MiniLM-L6-v2`) for the retrieval embedding step rather than using an external API for embeddings. This reduces latency, saves API costs, and allows semantic search to function offline. 
+- **LLM Generation:** I used the Google Gemini API for the generation step because of its speed and generous free tier, making the project reproducible for others.
+- **Graceful Fallbacks:** I designed the system so that if the API key is missing or invalid, the app doesn't crash. It catches the error and defaults to simply printing the retrieved songs.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+## Reliability and Evaluation (Testing Summary)
 
----
+To prove that the AI works and ensure reliability, I implemented multiple testing strategies:
+1. **Automated Unit Tests**: Wrote `tests/test_ai_dj.py` to automatically mock and verify the cosine similarity logic and ensure the system doesn't crash.
+2. **Logging and Error Handling**: The `src/ai_dj.py` script catches missing API keys or failed connection errors, logs them using the `logging` module, and gracefully falls back to a basic text list to prevent application crashes.
+3. **Human Evaluation**: I manually reviewed the outputs using an interactive terminal loop to ensure the LLM explanations actually matched the retrieved song data without hallucinating.
 
-## Limitations and Risks
-
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
-
----
+**Summary of Results:**
+*2 out of 2 automated tests passed successfully. The AI handled semantic searches well, but initially struggled when the API key was missing, which was resolved by adding a graceful fallback error handler. Accuracy in the generated responses improved significantly once I started passing strict song metadata (genre, mood, energy) directly into the LLM's prompt context.*
 
 ## Reflection
 
-Read and complete `model_card.md`:
+**Limitations and Biases:** The primary limitation of this system is the small, synthetic catalog (`songs.csv`), which lacks true musical diversity. Furthermore, the local embedding model (`all-MiniLM-L6-v2`) is trained on broad internet text and may exhibit cultural bias—for example, associating terms like "intense" or "nostalgic" more strongly with Western genres like Rock or Pop rather than global genres.
 
-[**Model Card**](model_card.md)
+**Potential Misuse and Prevention:** If deployed publicly, users could misuse the open text input to try and prompt-inject the LLM into generating offensive content or writing code. To prevent this, the system strictly constrains the AI's persona to an "enthusiastic AI DJ" and uses RAG to ground the generation, forcing the model to primarily discuss the retrieved songs rather than engaging in open-ended chat.
 
-Write 1 to 2 paragraphs here about what you learned:
+**Reliability Surprises:** While testing the system's reliability, I was surprised to find that the LLM's generation quality dropped significantly if the retrieved songs had sparse metadata. If a song lacked a detailed `mood` tag, the LLM would occasionally hallucinate an explanation for why it fit. This highlighted how heavily the "Generation" step relies on the quality of the "Retrieval" data.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
-
----
-
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
+**Collaboration with AI:** 
+- **Helpful Suggestion:** During the project, my AI coding assistant suggested using a hybrid RAG architecture—employing a local `sentence-transformer` for semantic search to keep latency low, while reserving the Gemini API strictly for the final text generation. This was a highly effective architectural decision.
+- **Flawed Suggestion:** Early in the testing phase, the AI assistant initially suggested writing automated tests that made live network calls to the Gemini API. This was a flawed suggestion because it would make the test suite slow, flaky, and dependent on API keys. We had to correct this by implementing `unittest.mock` to properly isolate and test the retrieval logic without hitting the network.
 
 ---
 
-## 2. Intended Use
+## 🌟 Extra Credit Features
 
-- What is this system trying to do
-- Who is it for
+This project includes all four optional stretch features to earn **+8 extra credit points**:
 
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
-
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
-
----
-
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
-
----
-
-## 7. Evaluation
-
-How did you check your system
-
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
-
-You do not need a numeric metric, but if you used one, explain what it measures.
-
----
-
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
-
----
-
-## 9. Personal Reflection
-
-A few sentences about what you learned:
-
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
-
-
---- 
-## Terminal GUI Screenshot
-
-![alt text](image.png)
-
-```text
-Loaded songs: 17
-
-==================================================
- 🎧 TOP RECOMMENDATIONS 🎧
-==================================================
-
-#1 | Sunrise City by Neon Echo
-    🌟 Score: 3.98 / 4.00
-    💡 Why?   Genre match (+2.0), Mood match (+1.0), Energy match (+0.98)
---------------------------------------------------
-#2 | Gym Hero by Max Pulse
-    🌟 Score: 2.87 / 4.00
-    💡 Why?   Genre match (+2.0), Energy match (+0.87)
---------------------------------------------------
-#3 | Rooftop Lights by Indigo Parade
-    🌟 Score: 1.96 / 4.00
-    💡 Why?   Mood match (+1.0), Energy match (+0.96)
---------------------------------------------------
-#4 | Focus Flow by LoRoom
-    🌟 Score: 0.99 / 4.00
-    💡 Why?   Energy match (+0.99)
---------------------------------------------------
-#5 | Desert Echoes by Nomad Pulse
-    🌟 Score: 0.96 / 4.00
-    💡 Why?   Energy match (+0.96)
---------------------------------------------------
-```
-
+1. **RAG Enhancement (+2 points):** The retrieval system pulls from *multiple data sources*. It embeds both `songs.csv` and a custom `artist_bios.csv`. This measurably improves the AI DJ's output by allowing it to share fun, dynamic trivia about the bands alongside the recommendations.
+2. **Agentic Workflow (+2 points):** I implemented a multi-step reasoning check inside `ai_dj.py` (`_agent_decision()`). Before passing data to the LLM, the agent checks the cosine similarity score. If it falls below `0.15` (meaning no good song matches the prompt), it triggers a pre-planned fallback strategy rather than forcing the LLM to hallucinate a bad match.
+3. **Fine-Tuning / Specialization (+2 points):** I implemented strict **Few-Shot Prompting** to constrain the AI DJ's tone. By passing exact formatting examples, the LLM is forced to act exclusively like a nostalgic "1990s Underground Radio Host", demonstrating highly specialized behavior distinct from generic AI text.
+4. **Test Harness Evaluation Script (+2 points):** I built a standalone test suite in `scripts/evaluate_dj.py`. It runs the RAG pipeline against 5 hard-coded, diverse edge cases, prints out confidence ratings, and generates a formatted Pass/Fail scorecard to prove reliability.
